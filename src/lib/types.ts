@@ -1,7 +1,7 @@
 export interface AgentConfig {
     name: string;
-    provider: string;       // 'anthropic', 'openai', or 'opencode'
-    model: string;           // e.g. 'sonnet', 'opus', 'gpt-5.3-codex'
+    provider: string;       // 'anthropic', 'openai', 'opencode', or 'openrouter'
+    model: string;           // e.g. 'sonnet', 'opus', 'gpt-5.3-codex', 'minimax/minimax-m2'
     working_directory: string;
 }
 
@@ -28,7 +28,7 @@ export interface Settings {
         whatsapp?: {};
     };
     models?: {
-        provider?: string; // 'anthropic', 'openai', or 'opencode'
+        provider?: string; // 'anthropic', 'openai', 'opencode', or 'openrouter'
         anthropic?: {
             model?: string;
         };
@@ -36,6 +36,9 @@ export interface Settings {
             model?: string;
         };
         opencode?: {
+            model?: string;
+        };
+        openrouter?: {
             model?: string;
         };
     };
@@ -127,4 +130,20 @@ export const OPENCODE_MODEL_IDS: Record<string, string> = {
     // Shorthand aliases
     'sonnet': 'opencode/claude-sonnet-4-5',
     'opus': 'opencode/claude-opus-4-6',
+};
+
+// OpenRouter model IDs — passed directly to OpenRouter API.
+// Model names follow the provider/model format used by OpenRouter.
+export const OPENROUTER_MODEL_IDS: Record<string, string> = {
+    'minimax/minimax-m2': 'minimax/minimax-m2',
+    'anthropic/claude-sonnet-4-5': 'anthropic/claude-sonnet-4-5',
+    'anthropic/claude-opus-4-6': 'anthropic/claude-opus-4-6',
+    'openai/gpt-5.2': 'openai/gpt-5.2',
+    'google/gemini-3-pro': 'google/gemini-3-pro',
+    'google/gemini-3-flash': 'google/gemini-3-flash',
+    'meta-llama/llama-4-maverick': 'meta-llama/llama-4-maverick',
+    'deepseek/deepseek-r3': 'deepseek/deepseek-r3',
+    // Shorthand aliases
+    'sonnet': 'anthropic/claude-sonnet-4-5',
+    'opus': 'anthropic/claude-opus-4-6',
 };

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { jsonrepair } from 'jsonrepair';
-import { Settings, AgentConfig, TeamConfig, CLAUDE_MODEL_IDS, CODEX_MODEL_IDS, OPENCODE_MODEL_IDS } from './types';
+import { Settings, AgentConfig, TeamConfig, CLAUDE_MODEL_IDS, CODEX_MODEL_IDS, OPENCODE_MODEL_IDS, OPENROUTER_MODEL_IDS } from './types';
 
 export const SCRIPT_DIR = path.resolve(__dirname, '../..');
 const _localTinyclaw = path.join(SCRIPT_DIR, '.tinyclaw');
@@ -52,6 +52,9 @@ export function getSettings(): Settings {
             } else if (settings?.models?.opencode) {
                 if (!settings.models) settings.models = {};
                 settings.models.provider = 'opencode';
+            } else if (settings?.models?.openrouter) {
+                if (!settings.models) settings.models = {};
+                settings.models.provider = 'openrouter';
             } else if (settings?.models?.anthropic) {
                 if (!settings.models) settings.models = {};
                 settings.models.provider = 'anthropic';
@@ -75,6 +78,8 @@ export function getDefaultAgentFromModels(settings: Settings): AgentConfig {
         model = settings?.models?.openai?.model || 'gpt-5.3-codex';
     } else if (provider === 'opencode') {
         model = settings?.models?.opencode?.model || 'sonnet';
+    } else if (provider === 'openrouter') {
+        model = settings?.models?.openrouter?.model || 'minimax/minimax-m2';
     } else {
         model = settings?.models?.anthropic?.model || 'sonnet';
     }
@@ -130,4 +135,12 @@ export function resolveCodexModel(model: string): string {
  */
 export function resolveOpenCodeModel(model: string): string {
     return OPENCODE_MODEL_IDS[model] || model || '';
+}
+
+/**
+ * Resolve the model ID for OpenRouter.
+ * Falls back to the raw model string from settings if no mapping is found.
+ */
+export function resolveOpenRouterModel(model: string): string {
+    return OPENROUTER_MODEL_IDS[model] || model || '';
 }

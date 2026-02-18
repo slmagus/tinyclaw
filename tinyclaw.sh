@@ -95,6 +95,8 @@ case "${1:-}" in
                 CURRENT_PROVIDER=$(jq -r '.models.provider // "anthropic"' "$SETTINGS_FILE" 2>/dev/null)
                 if [ "$CURRENT_PROVIDER" = "openai" ]; then
                     CURRENT_MODEL=$(jq -r '.models.openai.model // empty' "$SETTINGS_FILE" 2>/dev/null)
+                elif [ "$CURRENT_PROVIDER" = "openrouter" ]; then
+                    CURRENT_MODEL=$(jq -r '.models.openrouter.model // empty' "$SETTINGS_FILE" 2>/dev/null)
                 else
                     CURRENT_MODEL=$(jq -r '.models.anthropic.model // empty' "$SETTINGS_FILE" 2>/dev/null)
                 fi
@@ -158,16 +160,35 @@ case "${1:-}" in
                         echo "Note: Make sure you have the 'codex' CLI installed and authenticated."
                     fi
                     ;;
+                openrouter)
+                    if [ ! -f "$SETTINGS_FILE" ]; then
+                        echo -e "${RED}No settings file found. Run setup first.${NC}"
+                        exit 1
+                    fi
+
+                    # Switch to OpenRouter provider
+                    tmp_file="$SETTINGS_FILE.tmp"
+                    if [ -n "$MODEL_ARG" ]; then
+                        jq ".models.provider = \"openrouter\" | .models.openrouter.model = \"$MODEL_ARG\"" "$SETTINGS_FILE" > "$tmp_file" && mv "$tmp_file" "$SETTINGS_FILE"
+                        echo -e "${GREEN}✓ Switched to OpenRouter provider with model: $MODEL_ARG${NC}"
+                    else
+                        jq ".models.provider = \"openrouter\"" "$SETTINGS_FILE" > "$tmp_file" && mv "$tmp_file" "$SETTINGS_FILE"
+                        echo -e "${GREEN}✓ Switched to OpenRouter provider${NC}"
+                    fi
+                    echo ""
+                    echo "Note: Make sure OPENROUTER_API_KEY is set. Get a key from openrouter.ai/settings/keys"
+                    ;;
                 *)
-                    echo "Usage: $0 provider {anthropic|openai} [--model MODEL_NAME]"
+                    echo "Usage: $0 provider {anthropic|openai|openrouter} [--model MODEL_NAME]"
                     echo ""
                     echo "Examples:"
                     echo "  $0 provider                                    # Show current provider and model"
                     echo "  $0 provider anthropic                          # Switch to Anthropic"
                     echo "  $0 provider openai                             # Switch to OpenAI"
+                    echo "  $0 provider openrouter                         # Switch to OpenRouter"
                     echo "  $0 provider anthropic --model sonnet           # Switch to Anthropic with Sonnet"
                     echo "  $0 provider openai --model gpt-5.3-codex       # Switch to OpenAI with GPT-5.3 Codex"
-                    echo "  $0 provider openai --model gpt-4o              # Switch to OpenAI with custom model"
+                    echo "  $0 provider openrouter --model minimax/minimax-m2  # Switch to OpenRouter model"
                     exit 1
                     ;;
             esac
@@ -179,6 +200,8 @@ case "${1:-}" in
                 CURRENT_PROVIDER=$(jq -r '.models.provider // "anthropic"' "$SETTINGS_FILE" 2>/dev/null)
                 if [ "$CURRENT_PROVIDER" = "openai" ]; then
                     CURRENT_MODEL=$(jq -r '.models.openai.model // empty' "$SETTINGS_FILE" 2>/dev/null)
+                elif [ "$CURRENT_PROVIDER" = "openrouter" ]; then
+                    CURRENT_MODEL=$(jq -r '.models.openrouter.model // empty' "$SETTINGS_FILE" 2>/dev/null)
                 else
                     CURRENT_MODEL=$(jq -r '.models.anthropic.model // empty' "$SETTINGS_FILE" 2>/dev/null)
                 fi
@@ -281,8 +304,10 @@ case "${1:-}" in
                     echo "  $0 agent provider coder                                    # Show current provider/model"
                     echo "  $0 agent provider coder anthropic                           # Switch to Anthropic"
                     echo "  $0 agent provider coder openai                              # Switch to OpenAI"
+                    echo "  $0 agent provider coder openrouter                          # Switch to OpenRouter"
                     echo "  $0 agent provider coder anthropic --model opus              # Switch to Anthropic Opus"
                     echo "  $0 agent provider coder openai --model gpt-5.3-codex        # Switch to OpenAI GPT-5.3 Codex"
+                    echo "  $0 agent provider coder openrouter --model minimax/minimax-m2  # Switch to OpenRouter"
                     exit 1
                 fi
                 agent_provider "$3" "$4" "$5" "$6"

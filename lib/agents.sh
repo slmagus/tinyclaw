@@ -134,10 +134,12 @@ agent_add() {
     echo "  1) Anthropic (Claude)"
     echo "  2) OpenAI (Codex)"
     echo "  3) OpenCode"
-    read -rp "Choose [1-3, default: 1]: " AGENT_PROVIDER_CHOICE
+    echo "  4) OpenRouter"
+    read -rp "Choose [1-4, default: 1]: " AGENT_PROVIDER_CHOICE
     case "$AGENT_PROVIDER_CHOICE" in
         2) AGENT_PROVIDER="openai" ;;
         3) AGENT_PROVIDER="opencode" ;;
+        4) AGENT_PROVIDER="openrouter" ;;
         *) AGENT_PROVIDER="anthropic" ;;
     esac
 
@@ -174,6 +176,29 @@ agent_add() {
             7) AGENT_MODEL="openai/gpt-5.3-codex" ;;
             8) read -rp "Enter model name (e.g. provider/model): " AGENT_MODEL ;;
             *) AGENT_MODEL="opencode/claude-sonnet-4-5" ;;
+        esac
+    elif [ "$AGENT_PROVIDER" = "openrouter" ]; then
+        echo "Model (provider/model format):"
+        echo "  1) minimax/minimax-m2"
+        echo "  2) anthropic/claude-sonnet-4-5"
+        echo "  3) anthropic/claude-opus-4-6"
+        echo "  4) openai/gpt-5.2"
+        echo "  5) google/gemini-3-pro"
+        echo "  6) google/gemini-3-flash"
+        echo "  7) meta-llama/llama-4-maverick"
+        echo "  8) deepseek/deepseek-r3"
+        echo "  9) Custom (enter model name)"
+        read -rp "Choose [1-9, default: 1]: " AGENT_MODEL_CHOICE
+        case "$AGENT_MODEL_CHOICE" in
+            2) AGENT_MODEL="anthropic/claude-sonnet-4-5" ;;
+            3) AGENT_MODEL="anthropic/claude-opus-4-6" ;;
+            4) AGENT_MODEL="openai/gpt-5.2" ;;
+            5) AGENT_MODEL="google/gemini-3-pro" ;;
+            6) AGENT_MODEL="google/gemini-3-flash" ;;
+            7) AGENT_MODEL="meta-llama/llama-4-maverick" ;;
+            8) AGENT_MODEL="deepseek/deepseek-r3" ;;
+            9) read -rp "Enter model name (e.g. provider/model): " AGENT_MODEL ;;
+            *) AGENT_MODEL="minimax/minimax-m2" ;;
         esac
     else
         echo "Model:"
@@ -402,15 +427,33 @@ agent_provider() {
                 echo "Use 'tinyclaw agent provider ${agent_id} openai --model {gpt-5.3-codex|gpt-5.2}' to also set the model."
             fi
             ;;
+        openrouter)
+            if [ -n "$model_arg" ]; then
+                jq --arg id "$agent_id" --arg model "$model_arg" \
+                    '.agents[$id].provider = "openrouter" | .agents[$id].model = $model' \
+                    "$SETTINGS_FILE" > "$tmp_file" && mv "$tmp_file" "$SETTINGS_FILE"
+                echo -e "${GREEN}✓ Agent '${agent_id}' switched to OpenRouter with model: ${model_arg}${NC}"
+            else
+                jq --arg id "$agent_id" \
+                    '.agents[$id].provider = "openrouter"' \
+                    "$SETTINGS_FILE" > "$tmp_file" && mv "$tmp_file" "$SETTINGS_FILE"
+                echo -e "${GREEN}✓ Agent '${agent_id}' switched to OpenRouter${NC}"
+                echo ""
+                echo "Use 'tinyclaw agent provider ${agent_id} openrouter --model MODEL' to also set the model."
+                echo "Note: Make sure OPENROUTER_API_KEY is set. Get a key from openrouter.ai/settings/keys"
+            fi
+            ;;
         *)
-            echo "Usage: tinyclaw agent provider <agent_id> {anthropic|openai} [--model MODEL_NAME]"
+            echo "Usage: tinyclaw agent provider <agent_id> {anthropic|openai|openrouter} [--model MODEL_NAME]"
             echo ""
             echo "Examples:"
             echo "  tinyclaw agent provider coder                                    # Show current provider/model"
             echo "  tinyclaw agent provider coder anthropic                           # Switch to Anthropic"
             echo "  tinyclaw agent provider coder openai                              # Switch to OpenAI"
+            echo "  tinyclaw agent provider coder openrouter                          # Switch to OpenRouter"
             echo "  tinyclaw agent provider coder anthropic --model opus              # Switch to Anthropic Opus"
             echo "  tinyclaw agent provider coder openai --model gpt-5.3-codex        # Switch to OpenAI GPT-5.3 Codex"
+            echo "  tinyclaw agent provider coder openrouter --model minimax/minimax-m2  # Switch to OpenRouter"
             exit 1
             ;;
     esac

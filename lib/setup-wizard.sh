@@ -84,13 +84,15 @@ echo ""
 echo "  1) Anthropic (Claude)  (recommended)"
 echo "  2) OpenAI (Codex/GPT)"
 echo "  3) OpenCode"
+echo "  4) OpenRouter"
 echo ""
-read -rp "Choose [1-3]: " PROVIDER_CHOICE
+read -rp "Choose [1-4]: " PROVIDER_CHOICE
 
 case "$PROVIDER_CHOICE" in
     1) PROVIDER="anthropic" ;;
     2) PROVIDER="openai" ;;
     3) PROVIDER="opencode" ;;
+    4) PROVIDER="openrouter" ;;
     *)
         echo -e "${RED}Invalid choice${NC}"
         exit 1
@@ -155,6 +157,40 @@ elif [ "$PROVIDER" = "opencode" ]; then
             fi
             ;;
         *) MODEL="opencode/claude-sonnet-4-5" ;;
+    esac
+    echo -e "${GREEN}✓ Model: $MODEL${NC}"
+    echo ""
+elif [ "$PROVIDER" = "openrouter" ]; then
+    echo "Which OpenRouter model?"
+    echo ""
+    echo "  1) minimax/minimax-m2  (recommended)"
+    echo "  2) anthropic/claude-sonnet-4-5"
+    echo "  3) anthropic/claude-opus-4-6"
+    echo "  4) openai/gpt-5.2"
+    echo "  5) google/gemini-3-pro"
+    echo "  6) google/gemini-3-flash"
+    echo "  7) meta-llama/llama-4-maverick"
+    echo "  8) deepseek/deepseek-r3"
+    echo "  9) Custom  (enter model name)"
+    echo ""
+    read -rp "Choose [1-9, default: 1]: " MODEL_CHOICE
+
+    case "$MODEL_CHOICE" in
+        2) MODEL="anthropic/claude-sonnet-4-5" ;;
+        3) MODEL="anthropic/claude-opus-4-6" ;;
+        4) MODEL="openai/gpt-5.2" ;;
+        5) MODEL="google/gemini-3-pro" ;;
+        6) MODEL="google/gemini-3-flash" ;;
+        7) MODEL="meta-llama/llama-4-maverick" ;;
+        8) MODEL="deepseek/deepseek-r3" ;;
+        9)
+            read -rp "Enter model name (e.g. provider/model): " MODEL
+            if [ -z "$MODEL" ]; then
+                echo -e "${RED}Model name required${NC}"
+                exit 1
+            fi
+            ;;
+        *) MODEL="minimax/minimax-m2" ;;
     esac
     echo -e "${GREEN}✓ Model: $MODEL${NC}"
     echo ""
@@ -270,11 +306,12 @@ if [[ "$SETUP_AGENTS" =~ ^[yY] ]]; then
         read -rp "  Display name: " NEW_AGENT_NAME
         [ -z "$NEW_AGENT_NAME" ] && NEW_AGENT_NAME="$NEW_AGENT_ID"
 
-        echo "  Provider: 1) Anthropic  2) OpenAI  3) OpenCode"
-        read -rp "  Choose [1-3, default: 1]: " NEW_PROVIDER_CHOICE
+        echo "  Provider: 1) Anthropic  2) OpenAI  3) OpenCode  4) OpenRouter"
+        read -rp "  Choose [1-4, default: 1]: " NEW_PROVIDER_CHOICE
         case "$NEW_PROVIDER_CHOICE" in
             2) NEW_PROVIDER="openai" ;;
             3) NEW_PROVIDER="opencode" ;;
+            4) NEW_PROVIDER="openrouter" ;;
             *) NEW_PROVIDER="anthropic" ;;
         esac
 
@@ -295,6 +332,15 @@ if [[ "$SETUP_AGENTS" =~ ^[yY] ]]; then
                 4) NEW_MODEL="anthropic/claude-sonnet-4-5" ;;
                 5) read -rp "  Enter model name (e.g. provider/model): " NEW_MODEL ;;
                 *) NEW_MODEL="opencode/claude-sonnet-4-5" ;;
+            esac
+        elif [ "$NEW_PROVIDER" = "openrouter" ]; then
+            echo "  Model: 1) minimax/minimax-m2  2) anthropic/claude-sonnet-4-5  3) openai/gpt-5.2  4) Custom"
+            read -rp "  Choose [1-4, default: 1]: " NEW_MODEL_CHOICE
+            case "$NEW_MODEL_CHOICE" in
+                2) NEW_MODEL="anthropic/claude-sonnet-4-5" ;;
+                3) NEW_MODEL="openai/gpt-5.2" ;;
+                4) read -rp "  Enter model name (e.g. provider/model): " NEW_MODEL ;;
+                *) NEW_MODEL="minimax/minimax-m2" ;;
             esac
         else
             echo "  Model: 1) GPT-5.3 Codex  2) GPT-5.2  3) Custom"
@@ -339,6 +385,8 @@ if [ "$PROVIDER" = "anthropic" ]; then
     MODELS_SECTION='"models": { "provider": "anthropic", "anthropic": { "model": "'"${MODEL}"'" } }'
 elif [ "$PROVIDER" = "opencode" ]; then
     MODELS_SECTION='"models": { "provider": "opencode", "opencode": { "model": "'"${MODEL}"'" } }'
+elif [ "$PROVIDER" = "openrouter" ]; then
+    MODELS_SECTION='"models": { "provider": "openrouter", "openrouter": { "model": "'"${MODEL}"'" } }'
 else
     MODELS_SECTION='"models": { "provider": "openai", "openai": { "model": "'"${MODEL}"'" } }'
 fi

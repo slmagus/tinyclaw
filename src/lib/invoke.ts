@@ -2,9 +2,10 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { AgentConfig, TeamConfig } from './types';
-import { SCRIPT_DIR, resolveClaudeModel, resolveCodexModel, resolveOpenCodeModel } from './config';
+import { SCRIPT_DIR, resolveClaudeModel, resolveCodexModel, resolveOpenCodeModel, resolveOpenRouterModel } from './config';
 import { log } from './logging';
 import { ensureAgentDirectory, updateAgentTeammates } from './agent-setup';
+import { OpenRouter } from '@openrouter/sdk';
 
 export async function runCommand(command: string, args: string[], cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -152,6 +153,38 @@ export async function invokeAgent(
         }
 
         return response || 'Sorry, I could not generate a response from OpenCode.';
+    } else if (provider === 'openrouter') {
+        // OpenRouter — uses @openrouter/sdk for direct API calls.
+        // Stateless: each invocation is independent (no conversation continuity).
+        const modelId = resolveOpenRouterModel(agent.model);
+        log('INFO', `Using OpenRouter SDK (agent: ${agentId}, model: ${modelId})`);
+
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
+            throw new Error('OPENROUTER_API_KEY environment variable is not set. Get your key from openrouter.ai/settings/keys');
+        }
+
+        const client = new OpenRouter({ apiKey });
+
+        // Read AGENTS.md from working directory as system prompt
+        const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+        const agentsMdPath = path.join(workingDir, 'AGENTS.md');
+        if (fs.existsSync(agentsMdPath)) {
+            const systemPrompt = fs.readFileSync(agentsMdPath, 'utf8');
+            messages.push({ role: 'system', content: systemPrompt });
+        }
+        messages.push({ role: 'user', content: message });
+
+        const response = await client.chat.send({
+            chatGenerationParams: {
+                model: modelId,
+                messages,
+                stream: false,
+            },
+        });
+
+        const content = (response as any).choices?.[0]?.message?.content;
+        return (typeof content === 'string' ? content : '') || 'Sorry, I could not generate a response from OpenRouter.';
     } else {
         // Default to Claude (Anthropic)
         log('INFO', `Using Claude provider (agent: ${agentId})`);
